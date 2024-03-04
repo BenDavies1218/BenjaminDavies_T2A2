@@ -1,3 +1,4 @@
+from datetime import date
 from flask import Blueprint
 from init import db, bcrypt
 from Models.user import User
@@ -27,12 +28,22 @@ def seed_tables():
             is_admin=True,
         ),
         User(
-            name="User 1",
+            name="Benjamin Davies",
             email="user1@email.com",
             password=bcrypt.generate_password_hash("123456").decode("utf-8"),
         ),
     ]
     db.session.add_all(users)
+
+    reviews = [
+        Review(
+            details="this is a great recipe",
+            rating=9,
+            created=date.today(),
+            user=users[1],
+        )
+    ]
+    db.session.add_all(reviews)
 
     db.session.commit()
 
