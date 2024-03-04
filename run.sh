@@ -15,6 +15,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # Create the new user and grant permissions
     sudo -u $ADMIN psql -c "CREATE USER $USER WITH ENCRYPTED PASSWORD '$PASSWORD';"
     sudo -u $ADMIN psql -c "GRANT ALL PRIVILEGES ON DATABASE $DATABASE TO $USER;"
+    sudo -u $ADMIN psql -c "ALTER DATABASE $DATABASE OWNER TO $USER;"
 
     echo "Database '$DATABASE' and user '$USER' created successfully with all permissions granted."
 
@@ -25,8 +26,10 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
     # Create the new user and grant permissions
     sudo -u $ADMIN psql -c "CREATE USER $USER WITH ENCRYPTED PASSWORD '$PASSWORD';"
     sudo -u $ADMIN psql -c "GRANT ALL PRIVILEGES ON DATABASE $DATABASE TO $USER;"
+    sudo -u $ADMIN psql -c "ALTER DATABASE $DATABASE OWNER TO $USER;"
 
     echo "Database '$DATABASE' and user '$USER' created successfully with all permissions granted."
-else 
-    echo Sorry your system isn't compatible you will have to manually add the database
+else {
+    echo "Sorry your operating system isn't compatable please manually create the database"
+}
 fi
