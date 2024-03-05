@@ -10,6 +10,7 @@ class User(db.Model):
     email = db.Column(db.String, nullable=False, unique=True)
     password = db.Column(db.String, nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
+    created = db.Column(db.DateTime(timezone=True), nullable=False)
 
     reviews = db.relationship("Review", back_populates="user", cascade="all, delete")
 
@@ -24,6 +25,7 @@ class UserSchema(ma.Schema):
             "email",
             "password",
             "is_admin",
+            "created",
             "reviews",
         )
 
