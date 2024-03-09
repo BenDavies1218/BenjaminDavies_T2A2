@@ -5,28 +5,34 @@ from marshmallow import fields
 
 class Review(db.Model):
     __tablename__ = "reviews"
-
     id = db.Column(db.Integer, primary_key=True)
     details = db.Column(db.String(200))
     rating = db.Column(db.Integer)
     created = db.Column(db.DateTime(timezone=True), nullable=False)
 
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    user = db.relationship("User", back_populates="reviews")
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=False,
+    )
+    recipe_id = db.Column(
+        db.Integer,
+        db.ForeignKey("recipes.id"),
+        nullable=False,
+    )
+
+    user = db.relationship("User", back_populates="reviews", foreign_keys=[user_id])
+    recipe = db.relationship(
+        "Recipe", back_populates="reviews", foreign_keys="[Review.recipe_id]"
+    )
 
 
 class ReviewSchema(ma.Schema):
-
-    user = fields.Nested("UserSchema", only=["name", "email"])
+    user = fields.Nested("UserSchema", only=("id", "name", "email"))
+    recipe = fields.Nested("RecipeSchema", only=("title", "id"))
 
     class Meta:
-        fields = (
-            "id",
-            "details",
-            "rating",
-            "created",
-            "user",
-        )
+        fields = ("id", "details", "rating", "created", "user")
 
 
 review_schema = ReviewSchema()

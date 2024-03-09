@@ -1,13 +1,13 @@
 from Models.user import User
 from Models.review import Review
+from Models.recipe import Recipe
+from Models.ingredient import Ingredient
 from init import bcrypt
 from datetime import date
 import random
 
-REVIEW_STRING = ["Great", "eggsalent"]
 
-
-def seed(REVIEW_STRING):
+def seed():
     users_data = [
         User(
             email="admin@email.com",
@@ -21,6 +21,7 @@ def seed(REVIEW_STRING):
         ),
     ]
     review_data = []
+    REVIEW_STRING = ["Great", "eggsalent"]
     for i in range(10):
         dt = REVIEW_STRING[i]
         RATING = random.randint(3, 10)
@@ -33,4 +34,18 @@ def seed(REVIEW_STRING):
             )
         )
         dt = REVIEW_STRING[i + 1]
+
+    recipe_data = [
+        Ingredient(name="fish"),
+        Recipe(
+            Title="beef chicken noodle",
+            user_id=users_data[1],
+            review_id=review_data[1],
+            ingredient_id=[0],
+            difficulty=5,
+            serving_size=2,
+            instructions="cook all together",
+            allergy_id=["beef", "gluten"],
+        ),
+    ]
     return users_data, review_data
