@@ -18,7 +18,9 @@ def create_app():
     jwt.init_app(app)
 
     from Controllers.cli_controller import db_commands
+    from Controllers.recipe_controller import db_recipes
 
     app.register_blueprint(db_commands)
+    app.register_blueprint(db_recipes)
 
     return app

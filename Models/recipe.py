@@ -33,10 +33,14 @@ class Recipe(db.Model):
 
 
 class RecipeSchema(ma.Schema):
-    user = fields.Nested("UserSchema", only=("id", "name", "email"))
-    reviews = fields.List(fields.Nested("ReviewSchema", exclude=("user",)))
-    ingredients = fields.List(fields.Nested("RecipeIngredientSchema"))
-    allergies = fields.List(fields.Nested("RecipeAllergySchema"))
+    user = fields.Nested("UserSchema", only=("name", "email"))
+    reviews = fields.List(fields.Nested("ReviewSchema", exclude=("id", "user.id")))
+    ingredients = fields.List(
+        fields.Nested("RecipeIngredientSchema", only=("amount", "ingredient.name"))
+    )
+    allergies = fields.List(
+        fields.Nested("RecipeAllergySchema", only=("allergy", "allergy.name"))
+    )
 
     class Meta:
         fields = (
