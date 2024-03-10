@@ -1,10 +1,11 @@
 from sqlalchemy import func
 from flask import Blueprint, request
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from init import db
 from Models.recipe import Recipe, recipe_schema, recipes_schema
-from Models.review import Review, review_schema, reviews_schema
-from Models.user import User, user_schema, users_schema
-from Models.ingredient import Ingredient, recipe_ingredient_schema
+from Models.ingredient import Ingredient
+from Models.allergy import Allergy
+from Models.recipe_allergies import RecipeAllergy
 from Models.recipe_ingredients import RecipeIngredient
 
 db_recipes = Blueprint("recipes", __name__, url_prefix="/recipes")
@@ -13,11 +14,70 @@ db_recipes = Blueprint("recipes", __name__, url_prefix="/recipes")
 # ------------------------------------------------------------------
 # CRUD - CREATE
 
+"""
+POST data = {
+    "title": "string",
+    "difficulty": "int",
+    "serving_size": "int",
+    "instructions": "text",
+    "ingredients": {"pasta": "500g", "bacon": "200g"},
+    "allergies": ["Gluten", "Dairy"], can be none
+}
+"""
 
-# Create a new Recipe in the database
-@db_recipes.route("/Create")
+
+# Create a new recipe in the database
+@db_recipes.route("/Create", methods=["POST"])
 def create_recipe():
+    # need to add jwt for user id
     body_data = request.get_json()
+
+    title = body_data.get("title")
+    difficulty = body_data.get("difficulty")
+    serving_size = body_data.get("serving_size")
+    instructions = body_data.get("instructions")
+    ingredients_data = body_data.get("ingredients")
+    allergies = body_data.get("allergies")
+
+    # create recipe object
+    recipe = Recipe(
+        title=title,
+        user=get_jwt_identity(),
+        difficulty=difficulty,
+        serving_size=serving_size,
+        instructions=instructions,
+    )
+    db.session.add(recipe)
+    db.session.commit()
+
+    # add ingredients to recipe
+    for ingredient_name, quantity in ingredients_data.items():
+        ingredient = Ingredient.query.filter_by(name=ingredient_name).first()
+        if not ingredient:
+            # Ingredient doesn't exist create it
+            ingredient = Ingredient(name=ingredient_name)
+            db.session.add(ingredient)
+
+        # Create RecipeIngredient relation
+        recipe_ingredient = RecipeIngredient(
+            recipe_id=recipe.id, ingredient_id=ingredient.id, quantity=quantity
+        )
+        db.session.add(recipe_ingredient)
+    db.session.commit()
+
+    # add allergy to recipe
+    for allergy_name in allergies:
+        allergy = Allergy.query.filter_by(name=allergy_name).first()
+        if not allergy:
+            # Allergy doesn't exist create it
+            allergy = Allergy(name=allergy_name)
+            db.session.add(allergy)
+
+        # Create RecipeAllergy relation
+        recipe_allergies = RecipeAllergy(recipe_id=recipe.id, allergy_id=allergy.id)
+        db.session.add(recipe_allergies)
+    db.session.commit()
+    return {"message": "Recipe created successfully"}, 201
 
 
 # -------------------------------------------------------------------
@@ -72,4 +132,4 @@ def get_recipe_by_ingredient():
         # Serialize the list of dictionaries to JSON
         return recipe_schema.dump(serialized_recipe)
     else:
-        return {"Error": f"No recipes found with the ingredient '{item}'. "}
+        return {"Error": f"No recipes found with the ingredient '{item}'. "}, 404

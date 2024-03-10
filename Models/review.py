@@ -32,7 +32,7 @@ class ReviewSchema(ma.Schema):
     recipe = fields.Nested("RecipeSchema", only=("title", "id"))
 
     class Meta:
-        fields = ("id", "details", "rating", "created", "user")
+        fields = ("id", "details", "rating", "created", "user", "recipe")
 
 
 review_schema = ReviewSchema()
