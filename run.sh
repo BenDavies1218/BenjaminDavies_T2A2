@@ -26,6 +26,16 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
         echo "Database '$DATABASE' and user '$USER' created successfully with all permissions granted."
         
+        # Activate Virtual Enviroment
+        echo Activating virtual Enviroment 
+        python3 -m venv .venv
+        source .venv/bin/activate
+        echo $VIRTUAL_ENV
+
+
+        # Install Packages
+        echo Installing External Packages
+        pip3 install -r requirements.txt
         
     else
         
@@ -54,6 +64,18 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
         sudo -u $ADMIN psql -c "ALTER DATABASE $DATABASE OWNER TO $USER;"
 
         echo "Database '$DATABASE' and user '$USER' created successfully with all permissions granted."
+
+        # Activate Virtual Enviroment
+        echo Activating virtual Enviroment 
+        python3 -m venv .venv
+        source .venv/bin/activate
+        echo $VIRTUAL_ENV
+
+
+        # Install Packages
+        echo Installing External Packages
+        pip3 install -r requirements.txt
+
     else
         
         sudo -u $ADMIN psql -c "DROP DATABASE $DATABASE"
@@ -63,6 +85,6 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
     fi
 
 else {
-    echo "Sorry your operating system isn't compatable or postgres user doen't exist / isn't authorized to do this, please manually create the database"
+    echo "Sorry your operating system isn't compatable please manually create the database"
 }
 fi
