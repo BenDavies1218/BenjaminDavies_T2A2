@@ -12,46 +12,42 @@ db_recipes = Blueprint("recipes", __name__, url_prefix="/recipes")
 
 
 # ------------------------------------------------------------------
+# ------------------------------------------------------------------
 # CRUD - CREATE
 
 """
-POST data = {
+POST data
+{
     "title": "string",
-    "difficulty": "int",
-    "serving_size": "int",
+    "difficulty": int,
+    "serving_size": int,
     "instructions": "text",
     "ingredients": {"pasta": "500g", "bacon": "200g"},
-    "allergies": ["Gluten", "Dairy"], can be none
+    "allergies": ["string", "nullable=True"],
 }
 """
 
 
 # Create a new recipe in the database
-@db_recipes.route("/Create", methods=["POST"])
+@db_recipes.route("/create", methods=["POST"])
 def create_recipe():
     # need to add jwt for user id
     body_data = request.get_json()
 
-    title = body_data.get("title")
-    difficulty = body_data.get("difficulty")
-    serving_size = body_data.get("serving_size")
-    instructions = body_data.get("instructions")
-    ingredients_data = body_data.get("ingredients")
-    allergies = body_data.get("allergies")
-
     # create recipe object
     recipe = Recipe(
-        title=title,
-        user=get_jwt_identity(),
-        difficulty=difficulty,
-        serving_size=serving_size,
-        instructions=instructions,
+        title=body_data.get("title"),
+        user=body_data.get("user"),
+        difficulty=body_data.get("difficulty"),
+        serving_size=body_data.get("serving_size"),
+        instructions=body_data.get("instructions"),
     )
     db.session.add(recipe)
     db.session.commit()
 
     # add ingredients to recipe
-    for ingredient_name, quantity in ingredients_data.items():
+    ingredients_data = body_data.get("ingredients")
+    for ingredient_name, amount in ingredients_data.items():
         ingredient = Ingredient.query.filter_by(name=ingredient_name).first()
         if not ingredient:
             # Ingredient doesn't exist create it
@@ -60,26 +56,29 @@ def create_recipe():
 
         # Create RecipeIngredient relation
         recipe_ingredient = RecipeIngredient(
-            recipe_id=recipe.id, ingredient_id=ingredient.id, quantity=quantity
+            recipe_id=recipe.id, ingredient_id=ingredient.id, quantity=amount
         )
         db.session.add(recipe_ingredient)
     db.session.commit()
 
     # add allergy to recipe
-    for allergy_name in allergies:
-        allergy = Allergy.query.filter_by(name=allergy_name).first()
-        if not allergy:
-            # Allergy doesn't exist create it
-            allergy = Allergy(name=allergy_name)
-            db.session.add(allergy)
+    allergies = body_data.get("allergies")
+    if allergies:
+        for allergy_name in allergies:
+            allergy = Allergy.query.filter_by(name=allergy_name).first()
+            if not allergy:
+                # Allergy doesn't exist create it
+                allergy = Allergy(name=allergy_name)
+                db.session.add(allergy)
 
-        # Create RecipeAllergy relation
-        recipe_allergies = RecipeAllergy(recipe_id=recipe.id, allergy_id=allergy.id)
-        db.session.add(recipe_allergies)
-    db.session.commit()
+            # Create RecipeAllergy relation
+            recipe_allergies = RecipeAllergy(recipe_id=recipe.id, allergy_id=allergy.id)
+            db.session.add(recipe_allergies)
+        db.session.commit()
     return {"message": "Recipe created successfully"}, 201
 
 
+# -------------------------------------------------------------------
 # -------------------------------------------------------------------
 # CRUD - READ
 
@@ -113,7 +112,7 @@ def get_recipe_by_ingredient():
     )
 
     # Manually create a list of dictionaries representing each recipe
-    if len(recipes) > 0:
+    if recipes:
         serialized_recipes = []
         for recipe in recipes:
             serialized_recipe = {
@@ -133,3 +132,13 @@ def get_recipe_by_ingredient():
         return recipe_schema.dump(serialized_recipe)
     else:
         return {"Error": f"No recipes found with the ingredient '{item}'. "}, 404
+
+
+# -------------------------------------------------------------------
+# -------------------------------------------------------------------
+# CRUD - UPDATE
+
+
+# -------------------------------------------------------------------
+# -------------------------------------------------------------------
+# CRUD - DELETE
