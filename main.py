@@ -36,11 +36,13 @@ def create_app():
 
     app.register_blueprint(db_commands)
     app.register_blueprint(db_recipes)
+    app.register_blueprint(db_auth)
 
     @app.route("/")
     def index():
         doc_string = """
-        Hello and welcome to my recipe application the endpoints for the application are as follows:     
+        Hello and welcome to my recipe application the endpoints for the application are as follows:
+        <a href="http://127.0.0.1:8080/recipes"> recipes
         """
         return doc_string
 

@@ -1,5 +1,7 @@
 from init import db, ma
 from marshmallow import fields
+from sqlalchemy import DateTime
+import datetime
 
 
 class User(db.Model):
@@ -9,7 +11,7 @@ class User(db.Model):
     email = db.Column(db.String, nullable=False, unique=True)
     password = db.Column(db.String, nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
-    created = db.Column(db.DateTime(timezone=True), nullable=False)
+    created = db.Column(DateTime, default=datetime.datetime.utcnow)
 
     reviews = db.relationship("Review", back_populates="user", cascade="all, delete")
     recipes = db.relationship("Recipe", back_populates="user", cascade="all, delete")

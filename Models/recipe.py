@@ -1,12 +1,16 @@
-from datetime import datetime
 from init import db, ma
 from marshmallow import fields
+from sqlalchemy import DateTime
+import datetime
 
 
 class Recipe(db.Model):
     __tablename__ = "recipes"
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
+    title = db.Column(db.String(100), nullable=True)
+    difficulty = db.Column(db.String(50), nullable=True)
+    serving_size = db.Column(db.Integer, nullable=True)
+    instructions = db.Column(db.Text, nullable=True)
     user_id = db.Column(
         db.Integer,
         db.ForeignKey("users.id", name="recipes_user_id_fkey"),
@@ -17,13 +21,17 @@ class Recipe(db.Model):
         db.ForeignKey("reviews.id", name="recipes_review_id_fkey"),
         nullable=True,
     )
-    ingredient_id = db.Column(db.Integer, nullable=True)
-    difficulty = db.Column(db.Integer, nullable=True)
-    serving_size = db.Column(db.Integer, nullable=True)
-    instructions = db.Column(db.Text, nullable=False)
-    allergy_id = db.Column(db.Integer, nullable=True)
-    created = db.Column(db.DateTime(timezone=True), nullable=False)
+    created = db.Column(DateTime, default=datetime.datetime.utcnow)
 
+    # Adjust relationships
+    user = db.relationship("User", back_populates="recipes")
+    reviews = db.relationship(
+        "Review", back_populates="recipe", foreign_keys="[Review.recipe_id]"
+    )
+    ingredients = db.relationship("RecipeIngredient", back_populates="recipe")
+    allergies = db.relationship("RecipeAllergy", back_populates="recipe")
+
+    # Add foreign key relationships
     user = db.relationship("User", back_populates="recipes")
     reviews = db.relationship(
         "Review", back_populates="recipe", foreign_keys="[Review.recipe_id]"
@@ -33,6 +41,7 @@ class Recipe(db.Model):
 
 
 class RecipeSchema(ma.Schema):
+    # Adjust relationships in the schema
     user = fields.Nested("UserSchema", only=("name", "email"))
     reviews = fields.List(fields.Nested("ReviewSchema", exclude=("id", "user.id")))
     ingredients = fields.List(

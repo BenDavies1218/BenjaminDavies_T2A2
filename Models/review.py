@@ -1,6 +1,7 @@
-from datetime import datetime
 from init import db, ma
 from marshmallow import fields
+from sqlalchemy import DateTime
+import datetime
 
 
 class Review(db.Model):
@@ -17,13 +18,16 @@ class Review(db.Model):
     )
     recipe_id = db.Column(
         db.Integer,
-        db.ForeignKey("recipes.id"),
+        db.ForeignKey("recipes.id", name="reviews_recipe_id_fkey"),
         nullable=False,
     )
 
     user = db.relationship("User", back_populates="reviews", foreign_keys=[user_id])
     recipe = db.relationship(
-        "Recipe", back_populates="reviews", foreign_keys="[Review.recipe_id]"
+        "Recipe",
+        back_populates="reviews",
+        foreign_keys=[recipe_id],
+        remote_side="Recipe.id",
     )
 
 
