@@ -23,7 +23,11 @@ def auth_register():
         body_data = request.get_json()
 
         # create the user instance
-        user = User(name=body_data.get("name"), email=body_data.get("email"))
+        user = User(
+            name=body_data.get("name"),
+            email=body_data.get("email"),
+            is_admin=body_data.get("is_admin"),
+        )
 
         # password from the request body
         password = body_data.get("password")

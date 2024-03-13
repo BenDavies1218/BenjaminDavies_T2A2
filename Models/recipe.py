@@ -2,6 +2,7 @@ from init import db, ma
 from marshmallow import fields
 from sqlalchemy import DateTime
 import datetime
+from Models.ingredient import IngredientSchema
 
 
 class Recipe(db.Model):
@@ -22,14 +23,6 @@ class Recipe(db.Model):
         nullable=True,
     )
     created = db.Column(DateTime, default=datetime.datetime.utcnow)
-
-    # Adjust relationships
-    user = db.relationship("User", back_populates="recipes")
-    reviews = db.relationship(
-        "Review", back_populates="recipe", foreign_keys="[Review.recipe_id]"
-    )
-    ingredients = db.relationship("RecipeIngredient", back_populates="recipe")
-    allergies = db.relationship("RecipeAllergy", back_populates="recipe")
 
     # Add foreign key relationships
     user = db.relationship("User", back_populates="recipes")

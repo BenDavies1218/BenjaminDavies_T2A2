@@ -31,7 +31,7 @@ POST data sample
         "salt": "to taste",
         "black pepper": "to taste"
     },
-    "allergies": ["gluten", "lactose", "egg"]
+    "allergies": ["gluten", "lactose", "eggs"]
 }
 """
 
@@ -40,15 +40,13 @@ POST data sample
 @db_recipes.route("/create", methods=["POST"])
 @jwt_required()
 def create_recipe():
-    # need to add jwt for user id
     body_data = request.get_json()
+    recipe_name = body_data.get("title")
 
-    if Recipe.query.filter_by(title=body_data.get("title")).first():
-        return {"error": "recipe already exists"}
+    if Recipe.query.filter_by(title=recipe_name).first():
+        return {"message": f"Recipe for {recipe_name} already exists"}
 
     user_id = get_jwt_identity()
-
-    # Query the user from the database using the user ID
     user = User.query.get(user_id)
 
     # Check if the user exists
@@ -63,43 +61,44 @@ def create_recipe():
         serving_size=body_data.get("serving_size"),
         instructions=body_data.get("instructions"),
     )
+    db.session.add(recipe)
+    db.session.commit()
 
-    recipe = Recipe.query.filter_by(title=body_data.get("title")).first()
+    # Retrieve the newly created recipe to get its ID
+    recipe = Recipe.query.filter_by(title=recipe_name).first()
 
-    # add ingredients to recipe
+    # Add ingredients to recipe
     ingredients_data = body_data.get("ingredients")
     if ingredients_data:
         for ingredient_name, amount in ingredients_data.items():
             ingredient = Ingredient.query.filter_by(name=ingredient_name).first()
             if not ingredient:
-                # Ingredient doesn't exist create it
                 ingredient = Ingredient(name=ingredient_name)
                 db.session.add(ingredient)
+                db.session.commit()
 
-            # Create RecipeIngredient relation
+            # Create RecipeIngredient table
             recipe_ingredient = RecipeIngredient(
                 recipe_id=recipe.id, ingredient_id=ingredient.id, amount=amount
             )
             db.session.add(recipe_ingredient)
-    db.session.commit()
+            db.session.commit()
 
-    # add allergy to recipe
+    # Add allergies to recipe
     allergies = body_data.get("allergies")
     if allergies:
         for allergy_name in allergies:
             allergy = Allergy.query.filter_by(name=allergy_name).first()
             if not allergy:
-                # Allergy doesn't exist, create it
                 allergy = Allergy(name=allergy_name)
                 db.session.add(allergy)
-        db.session.commit()
+                db.session.commit()
 
-    # Create RecipeAllergy relation inside the loop
-    recipe_allergy = RecipeAllergy(recipe_id=recipe.id, allergy_id=allergy.id)
-    db.session.add(recipe_allergy)
+            # Create RecipeAllergy table
+            recipe_allergy = RecipeAllergy(recipe_id=recipe.id, allergy_id=allergy.id)
+            db.session.add(recipe_allergy)
+            db.session.commit()
 
-    # Commit changes after the loop
-    db.session.commit()
     return {"message": "Recipe created successfully"}, 201
 
 
@@ -125,44 +124,85 @@ def get_recipe(recipe_id):
     return recipe_schema.dump(recipe)
 
 
-# search for a recipe with specific ingredient in the database
+# search for a recipe with specific ingredient in the database requires query parameter
 @db_recipes.route("/search")
 def get_recipe_by_ingredient():
-    item = request.args.get("s")
-    recipes = (
+    ingredient = request.args.get("ingredient")
+    title = request.args.get("title")
+    recipes_ingredient = (
         db.session.query(Recipe)
         .join(RecipeIngredient)
         .join(Ingredient)
-        .filter(func.lower(Ingredient.name) == item)
+        .filter(func.lower(Ingredient.name) == ingredient.lower())
         .all()
     )
-
-    # Manually create a list of dictionaries representing each recipe
-    if recipes:
-        serialized_recipes = []
-        for recipe in recipes:
-            serialized_recipe = {
-                "id": recipe.id,
-                "title": recipe.title,
-                "difficulty": recipe.difficulty,
-                "serving_size": recipe.serving_size,
-                "instructions": recipe.instructions,
-                "ingredients": recipe.ingredients,
-                "user": recipe.user,
-                "allergies": recipe.allergies,
-                "reviews": recipe.reviews,
-            }
-            serialized_recipes.append(serialized_recipe)
-
-        # Serialize the list of dictionaries to JSON
-        return recipe_schema.dump(serialized_recipe)
+    if recipes_ingredient:
+        return recipes_schema.dump(recipes_ingredient)
     else:
-        return {"Error": f"No recipes found with the ingredient '{item}'. "}, 404
+        return {"Error": f"No recipes with the ingredient '{ingredient}' found. "}, 404
 
 
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
 # CRUD - UPDATE
+
+
+@db_recipes.route("/<int:recipe_id>", methods=["PUT", "PATCH"])
+@jwt_required()
+def update_recipe(recipe_id):
+    user_id = get_jwt_identity()
+    is_admin = db.session.query(User.is_admin).filter_by(id=user_id).scalar()
+
+    body_data = recipe_schema.load(request.get_json(), partial=True)
+    stmt = db.select(Recipe).filter_by(id=recipe_id)
+    recipe = db.session.scalar(stmt)
+
+    if recipe:
+        if str(recipe.user_id) != str(user_id) and not is_admin:
+            return {
+                "error": "Only the recipe owner or an administrator can edit the recipe"
+            }
+
+        # Update recipe fields
+        recipe.title = body_data.get("title") or recipe.title
+        recipe.difficulty = body_data.get("difficulty") or recipe.difficulty
+        recipe.serving_size = body_data.get("serving_size") or recipe.serving_size
+        recipe.instructions = body_data.get("instructions") or recipe.instructions
+
+        # Check if ingredients exist and add them if not
+        ingredients_data = body_data.get("ingredients")
+        if ingredients_data:
+            for ingredient_data in ingredients_data:
+                ingredient = (
+                    db.session.query(Ingredient)
+                    .filter_by(name=ingredient_data["name"])
+                    .first()
+                )
+                if not ingredient:
+                    ingredient = Ingredient(name=ingredient_data["name"])
+                    db.session.add(ingredient)
+                    db.session.commit()
+
+                # Update or create RecipeIngredient table
+                recipe_ingredient = RecipeIngredient.query.filter_by(
+                    recipe_id=recipe_id, ingredient_id=ingredient.id
+                ).first()
+
+                if recipe_ingredient:
+                    recipe_ingredient.amount = ingredient_data.get("amount")
+                else:
+                    recipe_ingredient = RecipeIngredient(
+                        recipe_id=recipe_id,
+                        ingredient_id=ingredient.id,
+                        amount=ingredient_data.get("amount"),
+                    )
+                    db.session.add(recipe_ingredient)
+
+            db.session.commit()
+
+        return recipe_schema.dump(recipe)
+    else:
+        return {"error": "Recipe not found"}, 404
 
 
 # -------------------------------------------------------------------

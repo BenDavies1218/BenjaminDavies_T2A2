@@ -42,7 +42,6 @@ def create_app():
     def index():
         doc_string = """
         Hello and welcome to my recipe application the endpoints for the application are as follows:
-        <a href="http://127.0.0.1:8080/recipes"> recipes
         """
         return doc_string
 
