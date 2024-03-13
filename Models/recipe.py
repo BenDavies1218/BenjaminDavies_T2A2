@@ -2,7 +2,6 @@ from init import db, ma
 from marshmallow import fields
 from sqlalchemy import DateTime
 import datetime
-from Models.ingredient import IngredientSchema
 
 
 class Recipe(db.Model):

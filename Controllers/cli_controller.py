@@ -1,6 +1,6 @@
 import random
 from datetime import date
-from seeding_function import seed
+from Functions.seeding_function import seed
 from flask import Blueprint
 from init import db, bcrypt
 from Models.user import User

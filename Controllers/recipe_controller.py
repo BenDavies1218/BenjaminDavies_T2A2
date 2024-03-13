@@ -204,7 +204,7 @@ def get_recipe_by_ingredient():
 @db_recipes.route("/<int:recipe_id>", methods=["PUT", "PATCH"])
 @jwt_required()
 def update_recipe(recipe_id):
-    # get the user information name and email
+    # check if the user is an admin
     user_id = get_jwt_identity()
     is_admin = db.session.query(User.is_admin).filter_by(id=user_id).scalar()
 

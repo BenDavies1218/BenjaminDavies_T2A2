@@ -2,11 +2,12 @@ from datetime import timedelta
 
 from flask import Blueprint, request
 from sqlalchemy.exc import IntegrityError
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, jwt_required
 from psycopg2 import errorcodes
 
+from Functions.Decorator_functions import authorise_as_admin, user_owner
 from init import db, bcrypt
-from Models.user import User, user_schema
+from Models.user import User, user_schema, users_schema
 
 db_auth = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -74,10 +75,36 @@ def auth_login():
 # CRUD - READ
 
 
+@db_auth.route("/user")
+@jwt_required()
+@authorise_as_admin
+def get_all_users():
+    stmt = db.select(User)
+    users = db.session.scalars(stmt)
+    if not users:
+        return {"error": "no users could be found"}, 404
+    return users_schema.dump(users)
+
+
+@db_auth.route("/user/<int:user_id>")
+@jwt_required()
+@user_owner
+def get_one_user(user_id):
+    user = db.session.query(User).filter_by(id=user_id).first()
+    if not user:
+        return {"error": f"User with id {user_id} couldn't be found"}, 404
+    return user_schema.dump(user)
+
+
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
 # CRUD - UPDATE
 
+@db_auth.route("/user/update/<int:user_id>", methods=["POST"])
+@jwt_required()
+@user_owner
+def user_update(user_id):
+    
 
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
