@@ -11,8 +11,12 @@ class RecipeIngredient(db.Model):
     )
     amount = db.Column(db.String(50), nullable=True)
 
-    recipe = db.relationship("Recipe", back_populates="ingredients")
-    ingredient = db.relationship("Ingredient", back_populates="recipes")
+    recipe = db.relationship(
+        "Recipe", back_populates="ingredients", cascade="all, delete"
+    )
+    ingredient = db.relationship(
+        "Ingredient", back_populates="recipes", cascade="all, delete"
+    )
 
 
 class RecipeIngredientSchema(ma.Schema):

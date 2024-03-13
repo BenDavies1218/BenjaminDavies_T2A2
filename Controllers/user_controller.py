@@ -48,11 +48,6 @@ def auth_register():
             return {"error": "Email address already in use"}, 409
 
 
-# -------------------------------------------------------------------
-# -------------------------------------------------------------------
-# CRUD - READ
-
-
 @db_auth.route("/login", methods=["POST"])  # /auth/login
 def auth_login():
     # get the data from the request body
@@ -72,6 +67,11 @@ def auth_login():
     else:
         # return error
         return {"error": "Invalid email or password"}, 401
+
+
+# -------------------------------------------------------------------
+# -------------------------------------------------------------------
+# CRUD - READ
 
 
 # -------------------------------------------------------------------

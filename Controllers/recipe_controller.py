@@ -8,6 +8,7 @@ from Models.allergy import Allergy
 from Models.recipe_allergies import RecipeAllergy
 from Models.recipe_ingredients import RecipeIngredient
 from Models.user import User
+from Models.review import Review
 
 db_recipes = Blueprint("recipes", __name__, url_prefix="/recipes")
 
@@ -64,10 +65,10 @@ def create_recipe():
     db.session.add(recipe)
     db.session.commit()
 
-    # Retrieve the newly created recipe to get its ID
+    # get id of recipe
     recipe = Recipe.query.filter_by(title=recipe_name).first()
 
-    # Add ingredients to recipe
+    # add ingredients to recipe
     ingredients_data = body_data.get("ingredients")
     if ingredients_data:
         for ingredient_name, amount in ingredients_data.items():
@@ -129,17 +130,35 @@ def get_recipe(recipe_id):
 def get_recipe_by_ingredient():
     ingredient = request.args.get("ingredient")
     title = request.args.get("title")
-    recipes_ingredient = (
-        db.session.query(Recipe)
-        .join(RecipeIngredient)
-        .join(Ingredient)
-        .filter(func.lower(Ingredient.name) == ingredient.lower())
-        .all()
-    )
-    if recipes_ingredient:
-        return recipes_schema.dump(recipes_ingredient)
-    else:
-        return {"Error": f"No recipes with the ingredient '{ingredient}' found. "}, 404
+
+    if not ingredient and not title:
+        return {"Error": "Please provide either 'ingredient' or 'title'."}, 400
+
+    if ingredient:
+        recipes_ingredient = (
+            db.session.query(Recipe)
+            .join(RecipeIngredient)
+            .join(Ingredient)
+            .filter(func.lower(Ingredient.name).ilike(f"%{ingredient.lower()}%"))
+            .all()
+        )
+        if recipes_ingredient:
+            return recipes_schema.dump(recipes_ingredient)
+        else:
+            return {
+                "Error": f"No recipes with the ingredient '{ingredient}' found."
+            }, 404
+
+    if title:
+        recipes_by_name = (
+            db.session.query(Recipe)
+            .filter(func.lower(Recipe.title).ilike(f"%{title.lower()}%"))
+            .all()
+        )
+        if recipes_by_name:
+            return recipes_schema.dump(recipes_by_name)
+        else:
+            return {"Error": f"No recipes with the title '{title}' found."}, 404
 
 
 # -------------------------------------------------------------------
@@ -153,7 +172,7 @@ def update_recipe(recipe_id):
     user_id = get_jwt_identity()
     is_admin = db.session.query(User.is_admin).filter_by(id=user_id).scalar()
 
-    body_data = recipe_schema.load(request.get_json(), partial=True)
+    body_data = request.get_json()
     stmt = db.select(Recipe).filter_by(id=recipe_id)
     recipe = db.session.scalar(stmt)
 
@@ -172,29 +191,27 @@ def update_recipe(recipe_id):
         # Check if ingredients exist and add them if not
         ingredients_data = body_data.get("ingredients")
         if ingredients_data:
-            for ingredient_data in ingredients_data:
+            for ingredient, amount in ingredients_data.items():
                 ingredient = (
-                    db.session.query(Ingredient)
-                    .filter_by(name=ingredient_data["name"])
-                    .first()
+                    db.session.query(Ingredient).filter_by(name=ingredient).first()
                 )
                 if not ingredient:
-                    ingredient = Ingredient(name=ingredient_data["name"])
-                    db.session.add(ingredient)
+                    new_ingredient = Ingredient(name=ingredient)
+                    db.session.add(new_ingredient)
                     db.session.commit()
 
                 # Update or create RecipeIngredient table
-                recipe_ingredient = RecipeIngredient.query.filter_by(
-                    recipe_id=recipe_id, ingredient_id=ingredient.id
-                ).first()
+                recipe_ingredient = (
+                    db.session.query(RecipeIngredient)
+                    .filter_by(recipe_id=recipe_id, ingredient_id=ingredient.id)
+                    .first()
+                )
 
                 if recipe_ingredient:
-                    recipe_ingredient.amount = ingredient_data.get("amount")
+                    recipe_ingredient.amount = amount
                 else:
                     recipe_ingredient = RecipeIngredient(
-                        recipe_id=recipe_id,
-                        ingredient_id=ingredient.id,
-                        amount=ingredient_data.get("amount"),
+                        recipe_id=recipe_id, ingredient_id=ingredient.id, amount=amount
                     )
                     db.session.add(recipe_ingredient)
 
@@ -208,3 +225,31 @@ def update_recipe(recipe_id):
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
 # CRUD - DELETE
+
+
+@db_recipes.route("/<int:recipe_id>", methods=["DELETE"])
+@jwt_required()
+def delete_recipe(recipe_id):
+    user_id = get_jwt_identity()
+    is_admin = db.session.query(User.is_admin).filter_by(id=user_id).scalar()
+
+    stmt = db.select(Recipe).filter_by(id=recipe_id)
+    recipe = db.session.scalar(stmt)
+
+    # Delete related tables first to avoid foriegn key null errors
+    db.session.query(RecipeIngredient).filter_by(recipe_id=recipe_id).delete()
+    db.session.query(RecipeAllergy).where(RecipeAllergy.recipe_id == recipe_id).delete()
+    db.session.query(Review).filter_by(recipe_id=recipe_id).delete()
+
+    # check if recipe exists
+    if recipe:
+        # check if recipe is owned by user
+        if str(recipe.user_id) != str(user_id) and not is_admin:
+            return {
+                "error": "Only the recipe owner or an administrator can delete the recipe"
+            }
+        db.session.delete(recipe)
+        db.session.commit()
+        return {"message": f"recipe with id {recipe_id} was successfully deleted"}, 204
+    else:
+        return {"error": f"Recipe with id {recipe_id} not found"}, 404
