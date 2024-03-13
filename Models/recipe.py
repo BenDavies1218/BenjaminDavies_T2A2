@@ -8,10 +8,10 @@ from Models.ingredient import IngredientSchema
 class Recipe(db.Model):
     __tablename__ = "recipes"
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=True)
-    difficulty = db.Column(db.String(50), nullable=True)
-    serving_size = db.Column(db.Integer, nullable=True)
-    instructions = db.Column(db.Text, nullable=True)
+    title = db.Column(db.String(100), nullable=False)
+    difficulty = db.Column(db.Integer, nullable=True)
+    serving_size = db.Column(db.Integer, nullable=False)
+    instructions = db.Column(db.Text, nullable=False)
     user_id = db.Column(
         db.Integer,
         db.ForeignKey("users.id", name="recipes_user_id_fkey"),
