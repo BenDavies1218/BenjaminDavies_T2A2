@@ -44,7 +44,7 @@ POST data sample
 @db_recipes.route("/create", methods=["POST"])
 @jwt_required()
 def create_recipe():
-    body_data = request.get_json()
+    body_data = recipe_schema.load(request.get_json())
     recipe_title = body_data.get("title")
 
     # check if recipe title already exists as I wanted the recipe title to be unique in this API even though the ERD model and relations would allow for duplicate recipes title.
@@ -209,7 +209,7 @@ def update_recipe(recipe_id):
     is_admin = db.session.query(User.is_admin).filter_by(id=user_id).scalar()
 
     # retrieve the json body
-    body_data = request.get_json()
+    body_data = recipe_schema.load(request.get_json(), partial=True)
     # select the recipe by id
     stmt = db.select(Recipe).filter_by(id=recipe_id)
     recipe = db.session.scalar(stmt)
@@ -277,7 +277,7 @@ def update_recipe(recipe_id):
                 db.session.add(recipe_allergy)
                 db.session.commit()
         # recipe the updated recipe to the user with code 200
-        return recipe_schema.dump(recipe), 200
+        return {"message": f"Recipe {recipe_id} was successfully updated"}, 200
     else:
         return {"error": f"Recipe with id '{recipe_id}' not found"}, 404
 

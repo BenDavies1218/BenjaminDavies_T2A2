@@ -35,28 +35,21 @@ class Recipe(db.Model):
 
 
 class RecipeSchema(ma.Schema):
-    # Adjust relationships in the schema
     user = fields.Nested("UserSchema", only=("name", "email"))
     reviews = fields.List(fields.Nested("ReviewSchema", exclude=("id", "user.id")))
-    ingredients = fields.List(
-        fields.Nested("RecipeIngredientSchema", only=("amount", "ingredient.name"))
-    )
-    allergies = fields.List(
-        fields.Nested("RecipeAllergySchema", only=("allergy", "allergy.name"))
-    )
+    ingredients = fields.Dict()
+    allergies = fields.List(fields.Str())
 
     class Meta:
         fields = (
-            "id",
             "title",
             "user",
             "reviews",
-            "ingredients",
             "difficulty",
             "serving_size",
             "instructions",
+            "ingredients",
             "allergies",
-            "created",
         )
 
 
