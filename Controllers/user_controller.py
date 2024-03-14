@@ -21,7 +21,7 @@ db_auth = Blueprint("auth", __name__, url_prefix="/auth")
 def auth_register():
     try:
         # the data that we get in body of the request
-        body_data = request.get_json()
+        body_data = user_schema.load(request.get_json())
 
         # create the user instance
         user = User(
@@ -52,7 +52,7 @@ def auth_register():
 @db_auth.route("/login", methods=["POST"])  # /auth/login
 def auth_login():
     # get the data from the request body
-    body_data = request.get_json()
+    body_data = user_schema.load(request.get_json())
     # Find the user with the email address
     stmt = db.select(User).filter_by(email=body_data.get("email"))
     user = db.session.scalar(stmt)
@@ -100,12 +100,40 @@ def get_one_user(user_id):
 # -------------------------------------------------------------------
 # CRUD - UPDATE
 
-@db_auth.route("/user/update/<int:user_id>", methods=["POST"])
+
+@db_auth.route("/user/<int:user_id>", methods=["PUT", "PATCH"])
 @jwt_required()
 @user_owner
 def user_update(user_id):
-    
+    body_data = user_schema.load(request.get_json(), partial=True)
+    stmt = db.select(User).filter_by(id=user_id)
+    user = db.session.scalar(stmt)
+    password = body_data.get("password")
+    if password:
+        password = bcrypt.generate_password_hash(password).decode("utf-8")
+    if user:
+        user.name = body_data.get("name") or user.name
+        user.email = body_data.get("email") or user.email
+        user.password = password or user.password
+        db.session.commit()
+        return user_schema.dump(user)
+    else:
+        # return error msg
+        return {"error": f"Card with id {user_id} not found"}, 404
+
 
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
 # CRUD - DELETE
+
+
+@db_auth.route("/user/<int:user_id>", methods=["DELETE"])
+@jwt_required()
+@user_owner
+def delete_user(user_id):
+    user = db.session.query(User).filter_by(id=user_id).first()
+    if not user:
+        return {"error": f"User with id {user_id} couldn't be found"}, 404
+    db.session.delete(user)
+    db.session.commit()
+    return {"message": f"User with id {user_id} successfully deleted"}

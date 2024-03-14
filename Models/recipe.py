@@ -16,20 +16,22 @@ class Recipe(db.Model):
         db.ForeignKey("users.id", name="recipes_user_id_fkey"),
         nullable=False,
     )
-    review_id = db.Column(
-        db.Integer,
-        db.ForeignKey("reviews.id", name="recipes_review_id_fkey"),
-        nullable=True,
-    )
     created = db.Column(DateTime, default=datetime.datetime.utcnow)
 
     # Add foreign key relationships
-    user = db.relationship("User", back_populates="recipes")
+    user = db.relationship("User", back_populates="recipes", cascade="all, delete")
     reviews = db.relationship(
-        "Review", back_populates="recipe", foreign_keys="[Review.recipe_id]"
+        "Review",
+        back_populates="recipe",
+        foreign_keys="[Review.recipe_id]",
+        cascade="all, delete",
     )
-    ingredients = db.relationship("RecipeIngredient", back_populates="recipe")
-    allergies = db.relationship("RecipeAllergy", back_populates="recipe")
+    ingredients = db.relationship(
+        "RecipeIngredient", back_populates="recipe", cascade="all, delete"
+    )
+    allergies = db.relationship(
+        "RecipeAllergy", back_populates="recipe", cascade="all, delete"
+    )
 
 
 class RecipeSchema(ma.Schema):

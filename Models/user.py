@@ -1,5 +1,4 @@
 from init import db, ma
-from marshmallow import fields
 from sqlalchemy import DateTime
 import datetime
 
@@ -19,7 +18,7 @@ class User(db.Model):
 
 class UserSchema(ma.Schema):
     class Meta:
-        fields = ("id", "name", "email", "is_admin", "created")
+        fields = ("id", "name", "email", "password", "is_admin", "created")
 
 
 user_schema = UserSchema()

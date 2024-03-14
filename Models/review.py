@@ -22,13 +22,10 @@ class Review(db.Model):
         nullable=False,
     )
 
-    user = db.relationship("User", back_populates="reviews", foreign_keys=[user_id])
-    recipe = db.relationship(
-        "Recipe",
-        back_populates="reviews",
-        foreign_keys=[recipe_id],
-        remote_side="Recipe.id",
+    user = db.relationship(
+        "User", back_populates="reviews", foreign_keys=[user_id], cascade="all, delete"
     )
+    recipe = db.relationship("Recipe", back_populates="reviews")
 
 
 class ReviewSchema(ma.Schema):

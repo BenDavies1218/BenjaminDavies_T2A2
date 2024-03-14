@@ -6,7 +6,9 @@ class Allergy(db.Model):
     __tablename__ = "allergy"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False, unique=True)
-    recipes = db.relationship("RecipeAllergy", back_populates="allergy")
+    recipes = db.relationship(
+        "RecipeAllergy", back_populates="allergy", cascade="all, delete"
+    )
 
 
 class AllergySchema(ma.Schema):
