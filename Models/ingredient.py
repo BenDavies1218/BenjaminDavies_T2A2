@@ -16,5 +16,5 @@ class IngredientSchema(ma.Schema):
         fields = ("id", "name")
 
 
-recipe_ingredient_schema = IngredientSchema()
-recipes_ingredients_schema = IngredientSchema(many=True)
+ingredient_schema = IngredientSchema()
+ingredients_schema = IngredientSchema(many=True)

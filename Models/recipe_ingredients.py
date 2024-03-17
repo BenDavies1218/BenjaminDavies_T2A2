@@ -20,7 +20,7 @@ class RecipeIngredient(db.Model):
 
 
 class RecipeIngredientSchema(ma.Schema):
-    ingredient = fields.Nested("IngredientSchema", excludes=("id"))
+    ingredient = fields.Nested("IngredientSchema", exclude=("id",))
 
     class Meta:
         fields = ("id", "ingredient", "amount")

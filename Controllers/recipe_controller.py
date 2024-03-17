@@ -1,5 +1,5 @@
-from sqlalchemy import func
-from flask import Blueprint, request
+from sqlalchemy import func, text
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from init import db
 from Models.recipe import Recipe, recipe_schema, recipes_schema
@@ -78,8 +78,10 @@ def create_recipe():
     # add ingredients to recipe
     ingredients_data = body_data.get("ingredients")
     if ingredients_data:
-        # I decided that I would send this data into the api as a dictonary {"ingredient": "amount"} this made the most logical sense
-        for ingredient_name, amount in ingredients_data.items():
+        # I decided that I would send this data into the api as a list of dictonaries { ingredient: {"name": "ingredient"}, "amount": "String" },  this made the most logical sense to pass the ingredient with the amount.
+        for ingredient_data in ingredients_data:
+            ingredient_name = ingredient_data.get("ingredient", {}).get("name")
+            amount = ingredient_data.get("amount")
             # check if ingredient exist in database
             ingredient = Ingredient.query.filter_by(name=ingredient_name).first()
             # if it doesn't we create a new instance of the ingredient
@@ -90,8 +92,9 @@ def create_recipe():
 
             # Create RecipeIngredient instance this will not exist as we are creating this recipe for the first time
             recipe_ingredient = RecipeIngredient(
-                recipe_id=recipe.id, ingredient_id=ingredient.id, amount=amount
+                recipe_id=recipe.id, ingredient=ingredient, amount=amount
             )
+
             db.session.add(recipe_ingredient)
             db.session.commit()
 
@@ -159,21 +162,31 @@ def get_recipe_by_ingredient():
 
     # first check if the ingredient parameter is true
     if ingredient:
-        # Start by joining all of the related tables recipe and recipeingredient. this is so we can send it back to the user
-        recipes_ingredient = (
-            db.session.query(Recipe)
-            .join(RecipeIngredient)
-            .join(Ingredient)
-            # filter using the ilike function so that even if the query is miss spelled a little it will send back ingredients that are similar too
-            .filter(func.lower(Ingredient.name).ilike(f"%{ingredient.lower()}%"))
-            .all()
-        )
-        # check if there are any recipes with that query
-        if recipes_ingredient:
-            # return data with 200 code
-            return recipes_schema.dump(recipes_ingredient), 200
+        # Construct the SQL query to search for the recipes with that ingredient. I tried to use sql alchmey but for some reason it had problems dumping the data properly, but the raw sql works.
+        sql_query = """
+            SELECT *
+            FROM recipes
+            WHERE id IN (
+            SELECT recipe_id
+            FROM recipe_ingredient
+            WHERE ingredient_id IN (
+                SELECT id
+                FROM ingredient
+                WHERE LOWER(name) LIKE LOWER(:ingredient)
+            )
+        );
+        """
 
-        # could find any recipes with that query, sends simple message back to user and 404 for not found
+        # Execute the SQL query with the provided ingredient parameter
+        recipes = db.session.execute(
+            text(sql_query), {"ingredient": f"%{ingredient}%"}
+        ).fetchall()
+
+        # Check if any recipes were found
+        if recipes:
+            print(recipes)
+            return recipes_schema.dump(recipes), 200
+
         else:
             return {
                 "Error": f"No recipes with the ingredient '{ingredient}' found."
@@ -235,25 +248,22 @@ def update_recipe(recipe_id):
 
         # Check if ingredients exist and add them if not
         if ingredients_data:
-            for ingredient_name, amount in ingredients_data.items():
-                # check if the ingredient exists in the database
-                exists = (
-                    db.session.query(Ingredient).filter_by(name=ingredient_name).first()
-                )
-                # if the ingredient doesn't we create a new instance and commit it to the database
-                if not exists:
-                    new = Ingredient(name=ingredient_name)
-                    db.session.add(new)
+            for ingredient_data in ingredients_data:
+                ingredient_name = ingredient_data.get("ingredient", {}).get("name")
+                amount = ingredient_data.get("amount")
+                # check if ingredient exist in database
+                ingredient = Ingredient.query.filter_by(name=ingredient_name).first()
+                # if it doesn't we create a new instance of the ingredient
+                if not ingredient:
+                    ingredient = Ingredient(name=ingredient_name)
+                    db.session.add(ingredient)
                     db.session.commit()
 
-                # Check if the ingredient exists in database again because if it didn't the first time then exists = null
-                exists = (
-                    db.session.query(Ingredient).filter_by(name=ingredient_name).first()
-                )
-                # will we create a new recipeingredient instance for each ingredient this is because we deleted all of them on line 234, i found this to be the most logical solution, I could potential loop through each recipeingredient relation and check for a change in the 'amount' value but this solution is much simpler to apply.
+                # Create RecipeIngredient instance this will not exist as we are creating this recipe for the first time
                 recipe_ingredient = RecipeIngredient(
-                    recipe_id=recipe.id, ingredient_id=exists.id, amount=amount
+                    recipe_id=recipe.id, ingredient=ingredient, amount=amount
                 )
+
                 db.session.add(recipe_ingredient)
                 db.session.commit()
 
