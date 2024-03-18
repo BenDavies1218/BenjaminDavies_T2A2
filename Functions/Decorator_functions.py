@@ -4,6 +4,7 @@ from init import db
 from flask_jwt_extended import get_jwt_identity
 
 
+# this decorator is used when an action can ONLY be performed by an administator
 def authorise_as_admin(fn):
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
@@ -22,6 +23,7 @@ def authorise_as_admin(fn):
     return wrapper
 
 
+# This decorator is used when an action can only be performed by a specific user or administator as administators by default have the highest level of authorization
 def user_owner(fn):
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):

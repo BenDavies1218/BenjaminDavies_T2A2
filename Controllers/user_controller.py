@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from flask import Blueprint, request
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, DataError
 from flask_jwt_extended import create_access_token, jwt_required
 from psycopg2 import errorcodes
 
@@ -47,6 +47,11 @@ def auth_register():
             return {"error": f"The {err.orig.diag.column_name} is required"}
         if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION:
             return {"error": "Email address already in use"}, 409
+    except DataError as err:
+        if err.orig.pgcode == errorcodes.ZERO_LENGTH_CHARACTER_STRING:
+            return {
+                "error": f"One or more fields are the wrong data type please refer to the schema"
+            }
 
 
 @db_auth.route("/login", methods=["POST"])  # /auth/login
@@ -136,4 +141,4 @@ def delete_user(user_id):
         return {"error": f"User with id {user_id} couldn't be found"}, 404
     db.session.delete(user)
     db.session.commit()
-    return {"message": f"User with id {user_id} successfully deleted"}
+    return {"message": f"User with id {user_id} successfully deleted"}, 200

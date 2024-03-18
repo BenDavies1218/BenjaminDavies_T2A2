@@ -33,10 +33,12 @@ def create_app():
     from Controllers.cli_controller import db_commands
     from Controllers.recipe_controller import db_recipes
     from Controllers.user_controller import db_auth
+    from Controllers.review_controller import review_bp
 
     app.register_blueprint(db_commands)
     app.register_blueprint(db_recipes)
     app.register_blueprint(db_auth)
+    app.register_blueprint(review_bp)
 
     @app.route("/")
     def index():

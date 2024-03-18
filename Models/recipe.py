@@ -7,7 +7,7 @@ import datetime
 class Recipe(db.Model):
     __tablename__ = "recipes"
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
+    title = db.Column(db.String(100), nullable=False, unique=True)
     difficulty = db.Column(db.Integer, nullable=True)
     serving_size = db.Column(db.Integer, nullable=False)
     instructions = db.Column(db.Text, nullable=False)
@@ -16,7 +16,7 @@ class Recipe(db.Model):
         db.ForeignKey("users.id", name="recipes_user_id_fkey"),
         nullable=False,
     )
-    created = db.Column(DateTime, default=datetime.datetime.utcnow)
+    created = db.Column(DateTime, default=datetime.datetime.now)
 
     # Add foreign key relationships
     user = db.relationship("User", back_populates="recipes", cascade="all, delete")

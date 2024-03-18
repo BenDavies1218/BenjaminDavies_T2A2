@@ -10,7 +10,7 @@ class User(db.Model):
     email = db.Column(db.String, nullable=False, unique=True)
     password = db.Column(db.String, nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
-    created = db.Column(DateTime, default=datetime.datetime.utcnow)
+    created = db.Column(DateTime, default=datetime.datetime.now)
 
     reviews = db.relationship("Review", back_populates="user", cascade="all, delete")
     recipes = db.relationship("Recipe", back_populates="user", cascade="all, delete")
