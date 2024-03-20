@@ -1,4 +1,3 @@
-from datetime import datetime
 from init import db, ma
 from marshmallow import fields
 
@@ -9,8 +8,12 @@ class RecipeAllergy(db.Model):
     recipe_id = db.Column(db.Integer, db.ForeignKey("recipes.id"), nullable=False)
     allergy_id = db.Column(db.Integer, db.ForeignKey("allergy.id"), nullable=False)
 
-    recipe = db.relationship("Recipe", back_populates="allergies")
-    allergy = db.relationship("Allergy", back_populates="recipes")
+    recipe = db.relationship(
+        "Recipe", back_populates="allergies", cascade="all, delete"
+    )
+    allergy = db.relationship(
+        "Allergy", back_populates="recipes", cascade="all, delete"
+    )
 
 
 class RecipeAllergySchema(ma.Schema):
