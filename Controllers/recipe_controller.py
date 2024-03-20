@@ -1,4 +1,5 @@
 from sqlalchemy import func, text
+from marshmallow import fields
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from init import db
@@ -6,7 +7,6 @@ from sqlalchemy.exc import IntegrityError, DataError
 from Models.recipe import Recipe, recipe_schema, recipes_schema
 from Models.ingredient import Ingredient
 from Models.allergy import Allergy
-from Models.recipe_allergies import RecipeAllergy
 from Models.recipe_ingredients import RecipeIngredient
 from Models.user import User
 from Models.review import Review
@@ -23,22 +23,46 @@ db_recipes = Blueprint("recipes", __name__, url_prefix="/recipes")
 """
 POST data sample
 {
-    "title": "meatballs",
-    "difficulty": 5,
-    "serving_size": 4,
-    "instructions": "1. Start by chopping all ingredients 2. mix together with herbs and spices 3. roll into round 3cm balls 4. bake in oven for 20 minutes until cooked 5. make tomato sauce 6. combine everything and eat.",
-    "ingredients": {
-        "beef": "500g",
-        "onion": "2 whole",
-        "eggs": "2",
-        "Parmesan cheese": "100g",
-        "breadcrumbs": "100gm",
-        "herbs": "2 Tablespoon",
-        "tomato sauce": "500ml",
-        "salt": "to taste",
-        "black pepper": "to taste"
-    },
-    "allergies": ["gluten", "dairy"]
+  "title": "Classic Cheeseburger",
+  "difficulty": 2,
+  "serving_size": 1,
+  "instructions": "1. Preheat grill to medium-high heat. 2. Form ground beef into patties and season with salt and pepper. 3. Grill patties for 4-5 minutes on each side, or until desired doneness. 4. Toast hamburger buns on the grill for 1-2 minutes. 5. Assemble burgers with lettuce, tomato, onion, pickles, cheese, ketchup, and mustard. 6. Serve hot and enjoy!",
+  "ingredients": [
+    { "ingredient": 
+		 			{ "name": "ground beef" }, 
+		 			"amount": "200g" },
+    { "ingredient": 
+		 			{ "name": "hamburger buns" }, 
+		 			"amount": "1" },
+    { "ingredient": 
+		 			{ "name": "lettuce" }, 
+		 			"amount": "1 leaf" },
+    { "ingredient": 
+		 			{ "name": "tomato slices" }, 
+		 			"amount": "2" },
+    { "ingredient": 
+		 			{ "name": "onion slices" }, 
+		 			"amount": "2" },
+    { "ingredient": 
+		 			{ "name": "pickles" }, 
+		 			"amount": "2 slices" },
+    { "ingredient": 
+		 			{ "name": "cheddar cheese" },
+		 			"amount": "2 slices" },
+    { "ingredient": 
+		 			{ "name": "ketchup" },
+		 			"amount": "to taste" },
+    { "ingredient": 
+		 			{ "name": "mustard" }, 
+		 			"amount": "to taste" },
+    { "ingredient":
+		 			{ "name": "salt" },
+		 			"amount": "to taste" },
+    { "ingredient": 
+		 			{ "name": "black pepper" }, 
+		 			"amount": "to taste" }
+  ],
+  "allergies": ["gluten", "lactose"]
 }
 """
 
@@ -184,7 +208,7 @@ def get_recipe_by_ingredient():
         WHERE id IN (SELECT recipe_id FROM recipe_ingredient)      =      selects the ingredients that are in specific recipe
 
         # sub query 2
-        WHERE ingredient_id IN (SELECT id FROM ingredient WHERE LOWER(name) LIKE LOWER (:ingredient))     =      selects the ingredients that is like the ingredient variable that is passed to query using lower so it becomes a case insensitive search
+        WHERE ingredient_id IN (SELECT id FROM ingredient WHERE LOWER(name) LIKE LOWER (:ingredient))     =      selects the ingredients that is like the ingredient variable that is passed to query, I used lower so it becomes a case insensitive search.
         """
 
         sql_query = """
@@ -235,16 +259,15 @@ def get_recipe_by_ingredient():
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
 # CRUD - UPDATE
+# Most complex route of the application
+# i first tried to check if each ingredient
 
 
 # pass the recipe id as an argument
 @db_recipes.route("/<int:recipe_id>", methods=["PUT", "PATCH"])
 @jwt_required()
+@user_owner
 def update_recipe(recipe_id):
-    # check if the user is an admin
-    user_id = get_jwt_identity()
-    is_admin = db.session.query(User.is_admin).filter_by(id=user_id).scalar()
-
     # retrieve the json body
     body_data = recipe_schema.load(request.get_json(), partial=True)
     # select the recipe by id
@@ -253,12 +276,6 @@ def update_recipe(recipe_id):
 
     # check that the recipe with specific id exists
     if recipe:
-        # checks that the user is authorized to edit the recipe or if the user is an admin
-        if str(recipe.user_id) != str(user_id) and not is_admin:
-            return {
-                "error": "Only the recipe owner or an administrator can edit the recipe"
-            }, 401
-
         # Update recipe fields that have no relations
         recipe.title = body_data.get("title") or recipe.title
         recipe.difficulty = body_data.get("difficulty") or recipe.difficulty
@@ -283,7 +300,7 @@ def update_recipe(recipe_id):
                     db.session.add(ingredient)
                     db.session.commit()
 
-                # Create RecipeIngredient instance this will not exist as we are creating this recipe for the first time
+                # Create RecipeIngredient instance this will not exist as we are creating this recipe_ingredient relation for the first time
                 recipe_ingredient = RecipeIngredient(
                     recipe_id=recipe.id, ingredient=ingredient, amount=amount
                 )

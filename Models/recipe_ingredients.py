@@ -1,5 +1,6 @@
 from init import db, ma
 from marshmallow import fields
+from Functions.Validation_functions import string_validation
 
 
 class RecipeIngredient(db.Model):
@@ -9,7 +10,7 @@ class RecipeIngredient(db.Model):
     ingredient_id = db.Column(
         db.Integer, db.ForeignKey("ingredient.id"), nullable=False
     )
-    amount = db.Column(db.String(50), nullable=True)
+    amount = db.Column(db.String(50), nullable=False)
 
     recipe = db.relationship(
         "Recipe", back_populates="ingredients", cascade="all, delete"
@@ -20,7 +21,12 @@ class RecipeIngredient(db.Model):
 
 
 class RecipeIngredientSchema(ma.Schema):
-    ingredient = fields.Nested("IngredientSchema", exclude=("id",))
+    recipe_id = fields.Int(required=True)
+    ingredient_id = fields.Int(required=True)
+    amount = fields.Str(
+        required=True, validate=string_validation(all_char=True, max=50, min=1)
+    )
+    ingredient = fields.Nested("IngredientSchema", only=("id", "name"))
 
     class Meta:
         fields = ("id", "ingredient", "amount")

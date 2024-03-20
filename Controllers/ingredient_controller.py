@@ -93,7 +93,7 @@ def delete_ingredient():
         """
         db.session.execute(text(sql_query))
         db.session.commit()
-        return {"message": "Ingredients successfully deleted"}
+        return {"message": "All ingredients without relations successfully deleted"}
     except IntegrityError:
         # Handle IntegrityError
         return {"error": "An integrity error occurred"}
@@ -103,29 +103,21 @@ def delete_ingredient():
 @jwt_required()
 @authorise_as_admin
 def delete_ingredient_by_id(ing_id):
-    try:
-        if ing_id:
-            existing_recipe = (
-                db.session.query(RecipeIngredient)
-                .filter_by(ingredient_id=ing_id)
-                .first()
-            )
-            if existing_recipe is None:
-                ingredient = db.session.query(Ingredient).get(
-                    ing_id
-                )  # Use .get() to retrieve the ingredient by ID
-                if ingredient:
-                    db.session.delete(ingredient)
-                    db.session.commit()
-                    return {
-                        "message": f"Ingredient with id {ing_id} successfully deleted"
-                    }
-                else:
-                    return {"error": f"Ingredient with id {ing_id} not found"}
+    if ing_id:
+        existing_recipe = (
+            db.session.query(RecipeIngredient).filter_by(ingredient_id=ing_id).first()
+        )
+        if existing_recipe is None:
+            ingredient = db.session.query(Ingredient).get(
+                ing_id
+            )  # Use .get() to retrieve the ingredient by ID
+            if ingredient:
+                db.session.delete(ingredient)
+                db.session.commit()
+                return {"message": f"Ingredient with id {ing_id} successfully deleted"}
             else:
-                return {
-                    "error": f"Couldn't delete ingredient with ID {ing_id} as it has relations with 1 or more recipes"
-                }
-    except IntegrityError as err:
-        if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
-            return {"error": f"The {err.orig.diag.column_name} is required"}
+                return {"error": f"Ingredient with id {ing_id} not found"}
+        else:
+            return {
+                "error": f"Couldn't delete ingredient with ID {ing_id} as it has relations with 1 or more recipes"
+            }

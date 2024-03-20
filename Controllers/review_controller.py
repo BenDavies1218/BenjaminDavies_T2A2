@@ -1,11 +1,10 @@
-from datetime import date
-
 from flask import Blueprint, request
 from sqlalchemy.exc import IntegrityError, DataError
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from psycopg2 import errorcodes
+from Models.recipe import Recipe
 
-from Functions.Decorator_functions import authorise_as_admin, user_owner
+from Functions.Decorator_functions import user_owner
 from init import db
 from Models.review import Review, review_schema, reviews_schema
 
@@ -17,11 +16,13 @@ review_bp = Blueprint("review", __name__, url_prefix="/review")
 # CRUD - CREATE
 @review_bp.route("/create/<int:recipe_id>", methods=["POST"])
 @jwt_required()
-@user_owner
 def create_review(recipe_id):
     try:
         body_data = review_schema.load(request.get_json())
         user_id = get_jwt_identity()
+        recipe_owner = db.session.query(Recipe).filter_by(id=recipe_id).first()
+        if user_id == str(recipe_owner.user_id):
+            return {"error": f"you cant make a review for your own recipe!!"}, 400
         new_review = Review(
             details=body_data.get("details"),
             rating=body_data.get("rating"),
