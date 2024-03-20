@@ -1,5 +1,6 @@
 from init import db, ma
 from marshmallow import fields
+from marshmallow.validate import Length, And, Regexp
 
 
 class Ingredient(db.Model):
@@ -12,6 +13,17 @@ class Ingredient(db.Model):
 
 
 class IngredientSchema(ma.Schema):
+    name = fields.String(
+        required=True,
+        validate=And(
+            Length(min=2, error="Name must be at least 2 characters long"),
+            Regexp(
+                "^[a-zA-Z0-9 ]+$",
+                error="Title can only contain alphanumeric characters",
+            ),
+        ),
+    )
+
     class Meta:
         fields = ("id", "name")
 

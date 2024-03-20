@@ -50,22 +50,6 @@ def create_recipe():
     try:
         body_data = recipe_schema.load(request.get_json())
 
-        fields = {
-            "title": str,
-            "difficulty": int,
-            "serving_size": int,
-            "instructions": str,
-            "ingredients": list,
-        }
-
-        for field, data_type in fields.items():
-            if field not in body_data:
-                return {"error": f"Field '{field}' is required"}, 400
-            if not isinstance(body_data[field], data_type):
-                return {
-                    "error": f"Field '{field}' must be of type '{data_type.__name__}'"
-                }, 400
-
         # check if recipe title already exists as I wanted the recipe title to be unique in this API even though the ERD model and relations would allow for duplicate recipes title.
         if Recipe.query.filter_by(title=body_data.get("title")).first():
             return {"error": "Recipe title already in use"}, 409
@@ -178,7 +162,7 @@ def get_recipe(recipe_id):
 
 
 # search for a recipe with specific ingredient or title in the database requires query parameter
-# acceptable parameters ["ingredient", "title"]
+# acceptable parameters names ["ingredient", "title"]
 @db_recipes.route("/search")
 def get_recipe_by_ingredient():
     # route handles 2 possible query parameters
@@ -191,7 +175,18 @@ def get_recipe_by_ingredient():
 
     # first check if the ingredient parameter is true
     if ingredient:
-        # Construct the SQL query to search for the recipes with that ingredient. I tried to use sql alchmey but for some reason it had problems dumping the data properly, but the raw sql works.
+        # Construct the SQL query to search for the recipes with that ingredient. I tried to use sql alchmey but I couldn't query the data properly, but the raw sql works fine.
+        """
+        # Main query
+        SELECT * FROM recipes     =      selects all columns from recipes in the database
+
+        #sub query 1
+        WHERE id IN (SELECT recipe_id FROM recipe_ingredient)      =      selects the ingredients that are in specific recipe
+
+        # sub query 2
+        WHERE ingredient_id IN (SELECT id FROM ingredient WHERE LOWER(name) LIKE LOWER (:ingredient))     =      selects the ingredients that is like the ingredient variable that is passed to query using lower so it becomes a case insensitive search
+        """
+
         sql_query = """
             SELECT *
             FROM recipes
@@ -300,7 +295,7 @@ def update_recipe(recipe_id):
         allergy_data = body_data.get("allergies")
         db.session.query(RecipeAllergy).filter_by(recipe_id=recipe_id).delete()
         if allergy_data:
-            # only differce is this data is a list not a dictonary
+            # only differce is this data is a list of strings not a dictonary
             for allergy in allergy_data:
                 exists = db.session.query(Allergy).filter_by(name=allergy).first()
                 new = Allergy(name=allergy)
