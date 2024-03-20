@@ -5,7 +5,6 @@ from flask import Blueprint
 from init import db, bcrypt
 from Models.user import User
 from Models.review import Review
-from Models.allergy import Allergy
 from Models.ingredient import Ingredient
 from Models.recipe import Recipe
 from Models.recipe_allergies import RecipeAllergy

@@ -17,6 +17,9 @@ class RecipeAllergy(db.Model):
 
 
 class RecipeAllergySchema(ma.Schema):
+    recipe_id = fields.Int(required=True)
+    allergy_id = fields.Int(required=True)
+
     allergy = fields.Nested("AllergySchema", only=("id", "name"))
 
     class Meta:
