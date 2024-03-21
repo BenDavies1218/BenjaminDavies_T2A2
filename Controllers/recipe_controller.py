@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError, DataError
 from Models.recipe import Recipe, recipe_schema, recipes_schema
 from Models.ingredient import Ingredient
 from Models.allergy import Allergy
+from Models.recipe_allergies import RecipeAllergy
 from Models.recipe_ingredients import RecipeIngredient
 from Models.user import User
 from Models.review import Review
@@ -128,8 +129,9 @@ def create_recipe():
         allergies = body_data.get("allergies")
         if allergies:
             # I decide allgeries could just be a simple list when sent to the api
-            for allergy_name in allergies:
+            for allergy_data in allergies:
                 # query to see if the allergy exists already
+                allergy_name = allergy_data.get("allergy", {}).get("name")
                 allergy = Allergy.query.filter_by(name=allergy_name).first()
                 # if it doesn't we create a new instance
                 if not allergy:

@@ -19,7 +19,7 @@ allergy_bp = Blueprint("allergy", __name__, url_prefix="/allergy")
 @allergy_bp.route("/", methods=["POST"])
 def create_allergy():
     try:
-        body_data = Allergy_schema.load(request.get_json())
+        body_data = allergy_schema.load(request.get_json())
         new_allergy = Allergy(name=body_data.get("name"))
         db.session.add(new_allergy)
         db.session.commit()

@@ -11,6 +11,13 @@ def authorise_as_admin(fn):
         user_id = get_jwt_identity()
         stmt = db.select(User).filter_by(id=user_id)
         user = db.session.scalar(stmt)
+
+        # If the user is not found
+        if not user:
+            return {
+                "error": "Failure to authorize user.id doesn't match Please check your token"
+            }, 404
+
         # if the user is an admin
         if user.is_admin:
             # we will continue and run the decorated function
@@ -32,7 +39,9 @@ def user_owner(fn):
 
         # If the user is not found
         if not user:
-            return {"error": "User couldn't be found"}, 404
+            return {
+                "error": "Failure to authorize user.id doesn't match Please check your token"
+            }, 404
 
         # Check if the user is the owner or an admin we can continue with the request
         if user.id == kwargs.get("user_id") or user.is_admin == True:

@@ -8,7 +8,7 @@ from Functions.Validation_functions import string_validation, integer_validation
 class Review(db.Model):
     __tablename__ = "reviews"
     id = db.Column(db.Integer, primary_key=True)
-    details = db.Column(db.String(200), nullable=False)
+    details = db.Column(db.String(500), nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     created = db.Column(DateTime, default=datetime.datetime.now)
 
@@ -30,8 +30,8 @@ class Review(db.Model):
 
 
 class ReviewSchema(ma.Schema):
-    details = fields.Str(required=True, validate=string_validation(max=200))
-    rating = fields.Int(required=True, validate=integer_validation(max=(100)))
+    details = fields.Str(required=True, validate=string_validation(max=500))
+    rating = fields.Int(required=True, validate=integer_validation(max=100))
 
     user = fields.Nested("UserSchema", only=("name", "email"))
     recipe = fields.Nested("RecipeSchema", only=("title", "id"))

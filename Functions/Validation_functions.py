@@ -42,11 +42,11 @@ def string_validation(*args, **kwargs):
 
 def password_validation(*args, **kwargs):
     validation = And(
-        Length(min=8, error="Password must be at least 12 characters long"),
+        Length(min=8, error="Password must be at least 8 characters long"),
         Length(max=25, error="Password must not be more than 25 characters long"),
         Regexp(
             r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$",
-            error="Password must contain at least one lowercase letter, one uppercase letter, one digit and be at least 8 characters long",
+            error="Password must contain at least one lowercase letter, one uppercase letter, one digit.",
         ),
     )
     return validation

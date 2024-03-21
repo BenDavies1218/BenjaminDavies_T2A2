@@ -38,15 +38,24 @@ class Recipe(db.Model):
 class RecipeSchema(ma.Schema):
     title = fields.Str(required=True, validate=string_validation(max=100))
     difficulty = fields.Int(required=False, validate=integer_validation(max=10))
-    serving_size = fields.Int(required=False, validate=integer_validation(max=10))
+    serving_size = fields.Int(required=False, validate=integer_validation(max=32))
     instructions = fields.Str(
         required=True, validate=string_validation(max=500, all_char=True)
     )
 
     user = fields.Nested("UserSchema", only=("name", "email"))
-    reviews = fields.List(fields.Nested("ReviewSchema", exclude=("id", "user.id")))
-    ingredients = fields.List(fields.Nested("RecipeIngredientSchema"))
-    allergies = fields.List(fields.Nested("RecipeAllergySchema"))
+    reviews = fields.List(
+        fields.Nested("ReviewSchema", exclude=("id", "user.id", "recipe"))
+    )
+    ingredients = fields.List(
+        fields.Nested(
+            "RecipeIngredientSchema",
+            exclude=("ingredient.id", "id"),
+        )
+    )
+    allergies = fields.List(
+        fields.Nested("RecipeAllergySchema", exclude=("id", "allergy.id"))
+    )
 
     class Meta:
         fields = (
