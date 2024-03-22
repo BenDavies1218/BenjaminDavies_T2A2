@@ -82,7 +82,7 @@ def update_ingredient(ing_id):
 # CRUD - DELETE
 
 
-@ingredient_bp.route("/delete", methods=["DELETE"])
+@ingredient_bp.route("/", methods=["DELETE"])
 @jwt_required()
 @authorise_as_admin
 def delete_ingredient():
@@ -99,7 +99,7 @@ def delete_ingredient():
         return {"error": "An integrity error occurred"}
 
 
-@ingredient_bp.route("/delete/<int:ing_id>", methods=["DELETE"])
+@ingredient_bp.route("/<int:ing_id>", methods=["DELETE"])
 @jwt_required()
 @authorise_as_admin
 def delete_ingredient_by_id(ing_id):
