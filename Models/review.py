@@ -2,13 +2,14 @@ from init import db, ma
 from marshmallow import fields
 from sqlalchemy import DateTime
 import datetime
+from Functions.Validation_functions import string_validation, integer_validation
 
 
 class Review(db.Model):
     __tablename__ = "reviews"
     id = db.Column(db.Integer, primary_key=True)
-    details = db.Column(db.String(200))
-    rating = db.Column(db.Integer)
+    details = db.Column(db.String(500), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
     created = db.Column(DateTime, default=datetime.datetime.now)
 
     user_id = db.Column(
@@ -29,6 +30,11 @@ class Review(db.Model):
 
 
 class ReviewSchema(ma.Schema):
+    details = fields.Str(
+        required=True, validate=string_validation(max=500, all_char=True)
+    )
+    rating = fields.Int(required=True, validate=integer_validation(max=100))
+
     user = fields.Nested("UserSchema", only=("name", "email"))
     recipe = fields.Nested("RecipeSchema", only=("title", "id"))
 

@@ -1,5 +1,6 @@
 from init import db, ma
 from marshmallow import fields
+from Functions.Validation_functions import string_validation, integer_validation
 from sqlalchemy import DateTime
 import datetime
 
@@ -9,7 +10,7 @@ class Recipe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False, unique=True)
     difficulty = db.Column(db.Integer, nullable=True)
-    serving_size = db.Column(db.Integer, nullable=False)
+    serving_size = db.Column(db.Integer, nullable=True)
     instructions = db.Column(db.Text, nullable=False)
     user_id = db.Column(
         db.Integer,
@@ -35,10 +36,26 @@ class Recipe(db.Model):
 
 
 class RecipeSchema(ma.Schema):
+    title = fields.Str(required=True, validate=string_validation(max=100))
+    difficulty = fields.Int(required=False, validate=integer_validation(max=10))
+    serving_size = fields.Int(required=False, validate=integer_validation(max=32))
+    instructions = fields.Str(
+        required=True, validate=string_validation(max=500, all_char=True)
+    )
+
     user = fields.Nested("UserSchema", only=("name", "email"))
-    reviews = fields.List(fields.Nested("ReviewSchema", exclude=("id", "user.id")))
-    ingredients = fields.List(fields.Nested("RecipeIngredientSchema"))
-    allergies = fields.List(fields.Str())
+    reviews = fields.List(
+        fields.Nested("ReviewSchema", exclude=("id", "user.id", "recipe"))
+    )
+    ingredients = fields.List(
+        fields.Nested(
+            "RecipeIngredientSchema",
+            exclude=("ingredient.id", "id"),
+        )
+    )
+    allergies = fields.List(
+        fields.Nested("RecipeAllergySchema", exclude=("id", "allergy.id"))
+    )
 
     class Meta:
         fields = (

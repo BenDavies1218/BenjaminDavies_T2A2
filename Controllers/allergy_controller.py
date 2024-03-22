@@ -4,10 +4,10 @@ from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import jwt_required
 from psycopg2 import errorcodes
 from Functions.Decorator_functions import authorise_as_admin
-from Models.recipe_ingredients import RecipeIngredient
+from Models.recipe_allergies import RecipeAllergy
 
 from init import db
-from Models.allergy import Allergy, Allergy_schema, Allergies_schema
+from Models.allergy import Allergy, allergy_schema, allergies_schema
 
 allergy_bp = Blueprint("allergy", __name__, url_prefix="/allergy")
 
@@ -19,7 +19,7 @@ allergy_bp = Blueprint("allergy", __name__, url_prefix="/allergy")
 @allergy_bp.route("/", methods=["POST"])
 def create_allergy():
     try:
-        body_data = Allergy_schema.load(request.get_json())
+        body_data = allergy_schema.load(request.get_json())
         new_allergy = Allergy(name=body_data.get("name"))
         db.session.add(new_allergy)
         db.session.commit()
@@ -49,10 +49,10 @@ def get_ingredient():
             .all()
         )
         if search_allergy:
-            return Allergies_schema.dump(search_allergy), 200
+            return allergies_schema.dump(search_allergy), 200
         else:
-            return {"Error": f"No Ingredients with the name '{search}' found."}, 404
-    return Allergies_schema.dump(stmt)
+            return {"Error": f"No Allergies with the name '{search}' found."}, 404
+    return allergies_schema.dump(stmt)
 
 
 # -------------------------------------------------------------------
@@ -66,12 +66,12 @@ def get_ingredient():
 @authorise_as_admin
 def update_ingredient(all_id):
     try:
-        body_data = Allergy_schema.load(request.get_json(), partial=True)
+        body_data = allergy_schema.load(request.get_json(), partial=True)
         stmt = db.select(Allergy).filter_by(id=all_id)
         ingredient = db.session.scalar(stmt)
         ingredient.name = body_data.get("name") or ingredient.name
         db.session.commit()
-        return {"message": f"Ingredient with id {all_id} successfully updated"}
+        return {"message": f"Allergy with id {all_id} successfully updated"}
     except IntegrityError as err:
         if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
             return {"error": f"The {err.orig.diag.column_name} is required"}
@@ -88,44 +88,36 @@ def update_ingredient(all_id):
 def delete_ingredient():
     try:
         sql_query = """
-            DELETE FROM ingredient
-            WHERE id NOT IN (SELECT DISTINCT ingredient_id FROM recipe_ingredient);
+            DELETE FROM allergy
+            WHERE id NOT IN (SELECT DISTINCT allergy_id FROM recipe_allergy);
         """
         db.session.execute(text(sql_query))
         db.session.commit()
-        return {"message": "Ingredients successfully deleted"}
+        return {"message": "Allergies without any relations successfully deleted"}
     except IntegrityError:
-        # Handle IntegrityError
-        return {"error": "An integrity error occurred"}
+        # if there is a problem with the query
+        return {"error": "A query error occurred"}
 
 
 @allergy_bp.route("/delete/<int:all_id>", methods=["DELETE"])
 @jwt_required()
 @authorise_as_admin
 def delete_ingredient_by_id(all_id):
-    try:
-        if all_id:
-            existing_recipe = (
-                db.session.query(RecipeIngredient)
-                .filter_by(ingredient_id=all_id)
-                .first()
-            )
-            if existing_recipe is None:
-                ingredient = db.session.query(Allergy).get(
-                    all_id
-                )  # Use .get() to retrieve the ingredient by ID
-                if ingredient:
-                    db.session.delete(ingredient)
-                    db.session.commit()
-                    return {
-                        "message": f"Ingredient with id {all_id} successfully deleted"
-                    }
-                else:
-                    return {"error": f"Ingredient with id {all_id} not found"}
+    if all_id:
+        existing_recipe = (
+            db.session.query(RecipeAllergy).filter_by(allergy_id=all_id).first()
+        )
+        if existing_recipe is None:
+            allergy = db.session.query(Allergy).get(
+                all_id
+            )  # Use .get() to retrieve the ingredient by ID
+            if allergy:
+                db.session.delete(allergy)
+                db.session.commit()
+                return {"message": f"Allergy with id {all_id} successfully deleted"}
             else:
-                return {
-                    "error": f"Couldn't delete ingredient with ID {all_id} as it has relations with 1 or more recipes"
-                }
-    except IntegrityError as err:
-        if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
-            return {"error": f"The {err.orig.diag.column_name} is required"}
+                return {"error": f"Allergy with id {all_id} not found"}
+        else:
+            return {
+                "error": f"Couldn't delete ingredient with ID {all_id} as it has relations with 1 or more recipes"
+            }

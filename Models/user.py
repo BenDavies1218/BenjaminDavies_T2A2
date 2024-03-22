@@ -1,6 +1,8 @@
 from init import db, ma
 from sqlalchemy import DateTime
 import datetime
+from marshmallow import fields
+from Functions.Validation_functions import string_validation, password_validation
 
 
 class User(db.Model):
@@ -17,6 +19,11 @@ class User(db.Model):
 
 
 class UserSchema(ma.Schema):
+    name = fields.Str(required=False, validate=string_validation(max=100))
+    email = fields.Str(required=True, validate=string_validation(email=True, max=200))
+    password = fields.Str(required=True, validate=password_validation())
+    is_admin = fields.Bool()
+
     class Meta:
         fields = ("id", "name", "email", "password", "is_admin", "created")
 
