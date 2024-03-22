@@ -21,52 +21,6 @@ db_recipes = Blueprint("recipes", __name__, url_prefix="/recipes")
 # ------------------------------------------------------------------
 # CRUD - CREATE
 
-"""
-POST data sample
-{
-  "title": "Classic Cheeseburger",
-  "difficulty": 2,
-  "serving_size": 1,
-  "instructions": "1. Preheat grill to medium-high heat. 2. Form ground beef into patties and season with salt and pepper. 3. Grill patties for 4-5 minutes on each side, or until desired doneness. 4. Toast hamburger buns on the grill for 1-2 minutes. 5. Assemble burgers with lettuce, tomato, onion, pickles, cheese, ketchup, and mustard. 6. Serve hot and enjoy!",
-  "ingredients": [
-    { "ingredient": 
-		 			{ "name": "ground beef" }, 
-		 			"amount": "200g" },
-    { "ingredient": 
-		 			{ "name": "hamburger buns" }, 
-		 			"amount": "1" },
-    { "ingredient": 
-		 			{ "name": "lettuce" }, 
-		 			"amount": "1 leaf" },
-    { "ingredient": 
-		 			{ "name": "tomato slices" }, 
-		 			"amount": "2" },
-    { "ingredient": 
-		 			{ "name": "onion slices" }, 
-		 			"amount": "2" },
-    { "ingredient": 
-		 			{ "name": "pickles" }, 
-		 			"amount": "2 slices" },
-    { "ingredient": 
-		 			{ "name": "cheddar cheese" },
-		 			"amount": "2 slices" },
-    { "ingredient": 
-		 			{ "name": "ketchup" },
-		 			"amount": "to taste" },
-    { "ingredient": 
-		 			{ "name": "mustard" }, 
-		 			"amount": "to taste" },
-    { "ingredient":
-		 			{ "name": "salt" },
-		 			"amount": "to taste" },
-    { "ingredient": 
-		 			{ "name": "black pepper" }, 
-		 			"amount": "to taste" }
-  ],
-  "allergies": ["gluten", "lactose"]
-}
-"""
-
 
 # Create a new recipe in the database
 @db_recipes.route("/create", methods=["POST"])

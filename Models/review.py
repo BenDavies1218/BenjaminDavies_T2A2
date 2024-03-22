@@ -30,7 +30,9 @@ class Review(db.Model):
 
 
 class ReviewSchema(ma.Schema):
-    details = fields.Str(required=True, validate=string_validation(max=500))
+    details = fields.Str(
+        required=True, validate=string_validation(max=500, all_char=True)
+    )
     rating = fields.Int(required=True, validate=integer_validation(max=100))
 
     user = fields.Nested("UserSchema", only=("name", "email"))

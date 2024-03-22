@@ -30,7 +30,7 @@ def authorise_as_admin(fn):
     return wrapper
 
 
-# This decorator is used when an action can only be performed by a specific user or administator as administators by default have the highest level of authorization
+# This decorator is used when an action can only be performed by a specific user or administator. (administators by default have the highest level of authorization)
 def user_owner(fn):
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
@@ -48,5 +48,23 @@ def user_owner(fn):
             return fn(*args, **kwargs)
         else:
             return {"error": "Not authorized to request this"}, 403
+
+    return wrapper
+
+
+def user_exists(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        user_id = get_jwt_identity()
+        user = db.session.query(User).filter_by(id=user_id).first()
+
+        # If the user is not found
+        if not user:
+            return {
+                "error": "Failure to authorize user.id doesn't match Please check your token"
+            }, 404
+        # if user exists we can continue :)
+        else:
+            return fn(*args, **kwargs)
 
     return wrapper

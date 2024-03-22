@@ -67,6 +67,8 @@ def seed_data():
             instructions="1. Preheat oven to 400°F (200°C). 2. Season chicken wings with salt and pepper. 3. Bake wings in the preheated oven for 45 minutes, turning once halfway through. 4. In a saucepan, melt butter and mix in hot sauce. 5. Toss baked wings in the sauce until fully coated. 6. Serve with celery sticks and blue cheese dressing.",
         ),
     ]
+
+    # Ingredient information
     ingredients_list = [
         "ground beef",
         "hamburger buns",

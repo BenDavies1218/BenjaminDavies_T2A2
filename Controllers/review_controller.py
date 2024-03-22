@@ -14,7 +14,7 @@ review_bp = Blueprint("review", __name__, url_prefix="/review")
 # ------------------------------------------------------------------
 # ------------------------------------------------------------------
 # CRUD - CREATE
-@review_bp.route("/create/<int:recipe_id>", methods=["POST"])
+@review_bp.route("/<int:recipe_id>", methods=["POST"])
 @jwt_required()
 def create_review(recipe_id):
     try:
@@ -81,7 +81,7 @@ def get_review_by_recipe(recipe_id):
 # CRUD - UPDATE
 
 
-@review_bp.route("/update/<int:review_id>", methods=["PUT", "PATCH"])
+@review_bp.route("/<int:review_id>", methods=["PUT", "PATCH"])
 @jwt_required()
 @user_owner
 def update_review(review_id):
@@ -101,7 +101,7 @@ def update_review(review_id):
 # CRUD - DELETE
 
 
-@review_bp.route("/delete/<int:review_id>", methods=["DELETE"])
+@review_bp.route("/<int:review_id>", methods=["DELETE"])
 @jwt_required()
 @user_owner
 def delete_review(review_id):

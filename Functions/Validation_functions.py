@@ -10,7 +10,10 @@ def string_validation(*args, **kwargs):
     minimum_length = kwargs.get("min") if kwargs.get("min") else 2
     validation = [
         And(
-            Length(min=minimum_length, error="Name must be at least 2 characters long"),
+            Length(
+                min=minimum_length,
+                error=f"Name must be at least {minimum_length} characters long",
+            ),
             Length(
                 max=maximum_length,
                 error=f"Name must not be more than {str(maximum_length)} characters long",
@@ -18,7 +21,7 @@ def string_validation(*args, **kwargs):
         )
     ]
 
-    # figured out i could make the validation a list and just append the regexp i need to it.
+    # figured out i could make the validation a list and just append the regexp i need to it. depending on what kwargs are passed.
     if kwargs.get("email"):
         validation.append(Email(error="Invalid email format"))
 
