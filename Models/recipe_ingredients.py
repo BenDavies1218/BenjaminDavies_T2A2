@@ -20,6 +20,7 @@ class RecipeIngredient(db.Model):
     )
 
 
+# I created my own function to handle validation
 class RecipeIngredientSchema(ma.Schema):
     recipe_id = fields.Int(required=True)
     ingredient_id = fields.Int(required=True)

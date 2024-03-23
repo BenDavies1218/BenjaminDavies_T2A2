@@ -12,6 +12,7 @@ class Ingredient(db.Model):
     )
 
 
+# I created my own function to handle validation
 class IngredientSchema(ma.Schema):
     name = fields.String(required=True, validate=string_validation(max=50))
 

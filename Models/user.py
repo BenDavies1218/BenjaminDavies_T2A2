@@ -18,6 +18,7 @@ class User(db.Model):
     recipes = db.relationship("Recipe", back_populates="user", cascade="all, delete")
 
 
+# I created my own function to handle validation
 class UserSchema(ma.Schema):
     name = fields.Str(required=False, validate=string_validation(max=100))
     email = fields.Str(required=True, validate=string_validation(email=True, max=200))

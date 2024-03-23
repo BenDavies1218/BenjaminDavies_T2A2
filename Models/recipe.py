@@ -14,7 +14,7 @@ class Recipe(db.Model):
     instructions = db.Column(db.Text, nullable=False)
     user_id = db.Column(
         db.Integer,
-        db.ForeignKey("users.id", name="recipes_user_id_fkey"),
+        db.ForeignKey("users.id"),
         nullable=False,
     )
     created = db.Column(DateTime, default=datetime.datetime.now)
@@ -24,7 +24,6 @@ class Recipe(db.Model):
     reviews = db.relationship(
         "Review",
         back_populates="recipe",
-        foreign_keys="[Review.recipe_id]",
         cascade="all, delete",
     )
     ingredients = db.relationship(
@@ -35,6 +34,7 @@ class Recipe(db.Model):
     )
 
 
+# I created my own function to handle validation
 class RecipeSchema(ma.Schema):
     title = fields.Str(required=True, validate=string_validation(max=100))
     difficulty = fields.Int(required=False, validate=integer_validation(max=10))

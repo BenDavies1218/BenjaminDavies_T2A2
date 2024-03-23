@@ -52,7 +52,7 @@ def user_owner(fn):
     return wrapper
 
 
-def user_exists(fn):
+def any_user(fn):
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         user_id = get_jwt_identity()

@@ -19,16 +19,15 @@ class Review(db.Model):
     )
     recipe_id = db.Column(
         db.Integer,
-        db.ForeignKey("recipes.id", name="reviews_recipe_id_fkey"),
+        db.ForeignKey("recipes.id"),
         nullable=False,
     )
 
-    user = db.relationship(
-        "User", back_populates="reviews", foreign_keys=[user_id], cascade="all, delete"
-    )
+    user = db.relationship("User", back_populates="reviews", cascade="all, delete")
     recipe = db.relationship("Recipe", back_populates="reviews")
 
 
+# I created my own function to handle validation
 class ReviewSchema(ma.Schema):
     details = fields.Str(
         required=True, validate=string_validation(max=500, all_char=True)

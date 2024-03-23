@@ -1,6 +1,6 @@
 import os
 from flask import Flask
-from init import db, ma, bcrypt, jwt
+from init import db, ma, bcrypt, jwt, migrate
 from marshmallow.exceptions import ValidationError
 
 
@@ -29,6 +29,7 @@ def create_app():
     ma.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
+    migrate.init_app(app, db)
 
     from Controllers.cli_controller import db_commands
     from Controllers.recipe_controller import db_recipes
@@ -46,9 +47,6 @@ def create_app():
 
     @app.route("/")
     def index():
-        doc_string = """
-        Hello and welcome to my recipe application the endpoints for the application are as follows:
-        """
-        return doc_string
+        return "Hello and welcome to my recipe api!"
 
     return app

@@ -12,6 +12,7 @@ class Allergy(db.Model):
     )
 
 
+# I created my own function to handle validation
 class AllergySchema(ma.Schema):
     name = fields.String(required=True, validate=string_validation(max=25))
 
