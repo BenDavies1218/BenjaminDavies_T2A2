@@ -83,17 +83,20 @@ def update_ingredient(all_id):
         body_data = allergy_schema.load(request.get_json(), partial=True)
 
         # Query Allergy and select the allergy with the target ID
-        stmt = db.select(Allergy).filter_by(id=all_id)
+        stmt = db.select(Allergy).filter_by(id=all_id).first()
         allergy = db.session.scalar(stmt)
+
+        if not stmt:
+            return {"error": "allergy with id {all_id} couldn't be found"}, 404
 
         # update the name
         allergy.name = body_data.get("name") or allergy.name
         db.session.commit()
         # return msg to the user that it was successful update
-        return {"message": f"Allergy with id {all_id} successfully updated"}
+        return {"message": f"Allergy with id {all_id} successfully updated"}, 200
     except IntegrityError as err:
         if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
-            return {"error": f"The {err.orig.diag.column_name} is required"}
+            return {"error": f"The {err.orig.diag.column_name} is required"}, 400
 
 
 # -------------------------------------------------------------------
@@ -115,11 +118,11 @@ def delete_ingredient():
         db.session.execute(text(sql_query))
         db.session.commit()
         # return successful msg to user
-        return {"message": "Allergies without any relations successfully deleted"}
+        return {"message": "Allergies without any relations successfully deleted"}, 200
 
     except IntegrityError:
         # if there is a problem with the query
-        return {"error": "A query error occurred"}
+        return {"error": "A query error occurred"}, 500
 
 
 @allergy_bp.route("/delete/<int:all_id>", methods=["DELETE"])
@@ -137,14 +140,13 @@ def delete_ingredient_by_id(all_id):
         if allergy:
             db.session.delete(allergy)
             db.session.commit()
-            return {"message": f"Allergy with id {all_id} successfully deleted"}
+            return {"message": f"Allergy with id {all_id} successfully deleted"}, 200
 
         # Return error couldn't find allergy
         else:
-            return {"error": f"Allergy with id {all_id} not found"}
-
-    # if the target allergy has relations than we cant delete it because that will cause a foriegn key null error and crash the database
+            return {"error": f"Allergy with id {all_id} not found"}, 400
     else:
+        # if the target allergy has relations than we cant delete it because that will cause a foriegn key null error and crash the database
         return {
             "error": f"Couldn't delete ingredient with ID {all_id} as it has relations with 1 or more recipes"
-        }
+        }, 403

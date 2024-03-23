@@ -20,9 +20,21 @@ def create_app():
     def bad_request(err):
         return {"error": str(err)}, 400
 
+    @app.errorhandler(401)
+    def not_authorized(err):
+        return {"error": str(err)}, 401
+
     @app.errorhandler(404)
     def bad_request(err):
         return {"error": str(err)}, 404
+
+    @app.errorhandler(405)
+    def method_not_allowed(err):
+        return {"error": str(err)}, 405
+
+    @app.errorhandler(500)
+    def server_error(err):
+        return {"error": str(err)}, 500
 
     # connect libraries with flask app
     db.init_app(app)

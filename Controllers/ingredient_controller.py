@@ -87,6 +87,9 @@ def update_ingredient(ing_id):
         stmt = db.select(Ingredient).filter_by(id=ing_id)
         ingredient = db.session.scalar(stmt)
 
+        if not ingredient:
+            return {"error": f"ingredient with id {ing_id} couldn't be found"}, 404
+
         # updates the name
         ingredient.name = body_data.get("name") or ingredient.name
         db.session.commit()
@@ -122,7 +125,7 @@ def delete_ingredient():
 
     except IntegrityError:
         # If the query encounters an error return this
-        return {"error": "An integrity error occurred"}, 400
+        return {"error": "An integrity error occurred"}, 500
 
 
 @ingredient_bp.route("/<int:ing_id>", methods=["DELETE"])
@@ -147,9 +150,8 @@ def delete_ingredient_by_id(ing_id):
         # error with the Ingredient query
         else:
             return {"error": f"Ingredient with id {ing_id} not found"}, 404
-
-    # if the target ingredient has relations than we cant delete it because that will cause a foriegn key null error and crash the database
     else:
+        # if the target ingredient has relations than we cant delete it because that will cause a foriegn key null error and crash the database
         return {
             "error": f"Couldn't delete ingredient with ID {ing_id} as it has relations with 1 or more recipes"
-        }, 400
+        }, 401

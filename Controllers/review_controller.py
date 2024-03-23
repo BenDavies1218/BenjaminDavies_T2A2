@@ -23,6 +23,10 @@ def create_review(recipe_id):
         user_id = get_jwt_identity()
         # query database for recipe we target id
         recipe_owner = db.session.query(Recipe).filter_by(id=recipe_id).first()
+
+        if not recipe_owner:
+            return {"error": f"recipe with id {recipe_id} could not be found"}
+
         # check if user id is the owner of the recipe, converting to a string because when we created the access token we speficied is was a type(str)
         if user_id == str(recipe_owner.user_id):
             return {"error": f"you cant make a review for your own recipe!!"}, 400
